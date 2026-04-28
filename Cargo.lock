@@ -631,11 +631,71 @@ dependencies = [
 ]
 
 [[package]]
+name = "latch-cache"
+version = "0.1.0"
+dependencies = [
+ "latch-core",
+ "serde",
+]
+
+[[package]]
+name = "latch-compress"
+version = "0.1.0"
+dependencies = [
+ "latch-core",
+]
+
+[[package]]
+name = "latch-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "latch-detect"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "latch-core",
+ "reqwest",
+ "serde_json",
+]
+
+[[package]]
+name = "latch-meter"
+version = "0.1.0"
+dependencies = [
+ "latch-core",
+]
+
+[[package]]
+name = "latch-retry"
+version = "0.1.0"
+dependencies = [
+ "latch-core",
+]
+
+[[package]]
+name = "latch-router"
+version = "0.1.0"
+dependencies = [
+ "latch-core",
+]
+
+[[package]]
 name = "latchd"
 version = "0.1.0"
 dependencies = [
  "axum",
  "dashmap",
+ "latch-cache",
+ "latch-compress",
+ "latch-core",
+ "latch-detect",
+ "latch-meter",
+ "latch-retry",
+ "latch-router",
  "reqwest",
  "serde",
  "serde_json",

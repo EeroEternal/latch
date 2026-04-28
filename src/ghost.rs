@@ -1,10 +1,11 @@
+use latch_core::Message;
 use serde::Serialize;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::time::interval;
 
-use crate::state::{AppState, Message};
+use crate::state::AppState;
 
 #[derive(Serialize)]
 struct GhostRequest {
@@ -56,7 +57,7 @@ pub fn spawn_ghost_daemon(state: Arc<AppState>) {
                             temperature: 0.0,
                         };
 
-                        let url = format!("{}/v1/chat/completions", target_node);
+                        let url = format!("{}/v1/chat/completions", target_node.as_str());
 
                         match client.post(&url).json(&payload).send().await {
                             Ok(_) => {

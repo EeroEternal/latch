@@ -3,6 +3,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Json},
 };
+use latch_core::{Message, SessionId};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicI64, Ordering};
@@ -11,7 +12,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 use crate::router::get_target_node;
-use crate::state::{AppState, Message};
+use crate::state::AppState;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InitRequest {
@@ -20,12 +21,12 @@ pub struct InitRequest {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct InitResponse {
-    pub session_id: String,
+    pub session_id: SessionId,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeltaRequest {
-    pub session_id: String,
+    pub session_id: SessionId,
     pub new_msg: Message,
 }
 
@@ -46,6 +47,7 @@ pub async fn init_handler(
     Json(payload): Json<InitRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let session_id = Uuid::new_v4().to_string();
+    let session_id = SessionId::new(session_id);
     let target_node = get_target_node(&payload.system_prompt, &state.backend_nodes);
 
     let now = SystemTime::now()
@@ -72,15 +74,12 @@ pub async fn delta_handler(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<DeltaRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let session = state
-        .sessions
-        .get(&payload.session_id)
-        .ok_or_else(|| {
-            (
-                StatusCode::NOT_FOUND,
-                Json(json!({"error": "Session not found"})),
-            )
-        })?;
+    let session = state.sessions.get(&payload.session_id).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Session not found"})),
+        )
+    })?;
     let session = session.value().clone();
 
     // CRITICAL: Lock history, push, clone, and DROP the lock immediately
@@ -97,7 +96,7 @@ pub async fn delta_handler(
         .as_secs() as i64;
     session.last_active.store(now, Ordering::SeqCst);
 
-    let target_url = format!("{}/v1/chat/completions", session.target_node);
+    let target_url = format!("{}/v1/chat/completions", session.target_node.as_str());
     let request_body = ChatCompletionRequest {
         model: "default".to_string(),
         messages: history_clone,
@@ -152,5 +151,10 @@ pub async fn delta_handler(
         .as_secs() as i64;
     session.last_active.store(now, Ordering::SeqCst);
 
-    Ok((StatusCode::OK, Json(DeltaResponse { message: assistant_msg })))
+    Ok((
+        StatusCode::OK,
+        Json(DeltaResponse {
+            message: assistant_msg,
+        }),
+    ))
 }

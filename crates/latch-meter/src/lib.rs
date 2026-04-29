@@ -22,13 +22,11 @@ impl UsageMeter {
         predicted_input_tokens: u64,
         predicted_output_tokens: u64,
     ) -> MeterVerdict {
-        let current = self
-            .sessions
-            .get(session_id)
-            .cloned()
-            .unwrap_or_default();
+        let current = self.sessions.get(session_id).cloned().unwrap_or_default();
         let next_input = current.input_tokens.saturating_add(predicted_input_tokens);
-        let next_output = current.output_tokens.saturating_add(predicted_output_tokens);
+        let next_output = current
+            .output_tokens
+            .saturating_add(predicted_output_tokens);
         let next_requests = current.requests.saturating_add(1);
 
         if let Some(limit) = cfg.session_token_limit {

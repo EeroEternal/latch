@@ -1,9 +1,9 @@
 # latch
-The Stateful Context Gateway for Native AI Agents
+Feature-gated SDK crates for Latch gateway capabilities
 
 ## Workspace Notes
 
-- `latchd` remains the gateway binary crate in the repository root.
+- This repository is now a pure Cargo workspace focused on SDK crates.
 - `crates/latch-core` is an extracted library crate for neutral shared types and configs.
 - `crates/latch-compress` provides stateless compression primitives for transparent proxy mode.
 - `crates/latch-cache` provides prompt-cache metadata planning/injection helpers.
@@ -11,6 +11,7 @@ The Stateful Context Gateway for Native AI Agents
 - `crates/latch-retry` provides retry/fallback/circuit-breaker policy primitives.
 - `crates/latch-detect` provides backend engine auto-detection with mockable probes.
 - `crates/latch-meter` provides per-session usage metering, quota checks, and cost estimation.
+- `crates/latch-sdk` is a feature-gated umbrella crate for downstream consumers.
 - `latch-core` intentionally has no UniGateway SDK dependency, so upstream gateways can adapt their own protocol types at the boundary.
 
 ## `latch-compress` MVP API

@@ -1,11 +1,15 @@
 [package]
 name = "latch-detect"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Backend engine auto-detection utilities for Latch"
+license = "Apache-2.0"
+repository = "https://github.com/EeroEternal/latch"
+homepage = "https://github.com/EeroEternal/latch"
 
 [dependencies]
 async-trait = "0.1"
-latch-core = { path = "../latch-core" }
+latch-core = { version = "0.2.0", path = "../latch-core" }
 reqwest = { version = "0.12", features = ["json"] }
 serde_json = "1.0"
 

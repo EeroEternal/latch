@@ -128,10 +128,12 @@ pub async fn detect_backend(probe: &dyn HttpProbe) -> DetectResult<DetectionRepo
         }
     }
 
-    if let Ok(tokenize) = probe.post_json(
-        "/tokenize",
-        json!({"model":"default","prompt":"hello world"}),
-    ).await
+    if let Ok(tokenize) = probe
+        .post_json(
+            "/tokenize",
+            json!({"model":"default","prompt":"hello world"}),
+        )
+        .await
     {
         if tokenize.status == 200 && tokenize.body.contains("token") {
             return Ok(DetectionReport {
@@ -263,8 +265,8 @@ mod tests {
 
     #[tokio::test]
     async fn detects_cloud_from_models_owned_by() {
-        let probe = MockProbe::new()
-            .with_get("/v1/models", 200, r#"{"data":[{"owned_by":"openai"}]}"#);
+        let probe =
+            MockProbe::new().with_get("/v1/models", 200, r#"{"data":[{"owned_by":"openai"}]}"#);
         let report = detect_backend(&probe).await.expect("detect ok");
         assert_eq!(report.backend, BackendKind::Cloud);
     }

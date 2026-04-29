@@ -34,7 +34,11 @@ impl RetryState {
     }
 }
 
-pub fn next_decision(state: &mut RetryState, cfg: &RetryConfig, attempt_index: usize) -> AttemptDecision {
+pub fn next_decision(
+    state: &mut RetryState,
+    cfg: &RetryConfig,
+    attempt_index: usize,
+) -> AttemptDecision {
     if let Some(cb) = &cfg.circuit_breaker {
         if let Some(opened_at) = state.circuit_opened_at {
             let elapsed = opened_at.elapsed();
@@ -62,6 +66,15 @@ pub fn compute_backoff(cfg: &RetryConfig, attempt_index: usize) -> Duration {
     if let Some(max_backoff) = cfg.max_backoff_ms {
         backoff = backoff.min(max_backoff);
     }
+
+    // Apply jitter to avoid thundering herd
+    // Uses fastrand for zero-dependency random
+    if cfg.jitter_ratio > 0.0 {
+        let range = (backoff as f64 * cfg.jitter_ratio) as i64;
+        let jitter = fastrand::i64(-range..=range);
+        backoff = ((backoff as i64) + jitter).max(0) as u64;
+    }
+
     Duration::from_millis(backoff)
 }
 
@@ -95,6 +108,7 @@ mod tests {
             max_backoff_ms: Some(500),
             fallback_provider: None,
             circuit_breaker: None,
+            jitter_ratio: 0.0, // Disable jitter for deterministic tests
         }
     }
 
@@ -139,5 +153,36 @@ mod tests {
         state.on_failure(&cfg);
         state.on_failure(&cfg);
         assert_eq!(next_decision(&mut state, &cfg, 0), AttemptDecision::Stop);
+    }
+
+    #[test]
+    fn jitter_affects_backoff() {
+        let cfg = RetryConfig {
+            max_attempts: 3,
+            backoff_ms: 100,
+            max_backoff_ms: None,
+            fallback_provider: None,
+            circuit_breaker: None,
+            jitter_ratio: 0.2,
+        };
+
+        // With jitter, the backoff should be different from the base value
+        // Run multiple times to ensure jitter is applied
+        let mut values: Vec<u64> = Vec::new();
+        for _ in 0..10 {
+            let mut state = RetryState::default();
+            if let AttemptDecision::RetryAfter(d) = next_decision(&mut state, &cfg, 0) {
+                values.push(d.as_millis() as u64);
+            }
+        }
+
+        // All values should be in range [80, 120] for 0.2 jitter
+        for v in &values {
+            assert!(*v >= 80 && *v <= 120, "Value {} out of range", v);
+        }
+
+        // There should be some variation (not all values identical)
+        let unique_count = values.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(unique_count > 1, "Jitter should produce varying values");
     }
 }

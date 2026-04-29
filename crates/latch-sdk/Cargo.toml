@@ -1,0 +1,29 @@
+[package]
+name = "latch-sdk"
+version = "0.2.0"
+edition = "2021"
+description = "Feature-gated SDK crates for Latch gateway capabilities"
+license = "Apache-2.0"
+repository = "https://github.com/EeroEternal/latch"
+homepage = "https://github.com/EeroEternal/latch"
+
+[features]
+default = []
+compress = ["dep:latch-compress"]
+cache = ["dep:latch-cache"]
+router = ["dep:latch-router"]
+retry = ["dep:latch-retry"]
+detect = ["dep:latch-detect"]
+meter = ["dep:latch-meter"]
+score = ["dep:latch-score"]
+full = ["compress", "cache", "router", "retry", "detect", "meter", "score"]
+
+[dependencies]
+latch-core = { version = "0.2.0", path = "../latch-core" }
+latch-compress = { version = "0.2.0", path = "../latch-compress", optional = true }
+latch-cache = { version = "0.2.0", path = "../latch-cache", optional = true }
+latch-router = { version = "0.2.0", path = "../latch-router", optional = true }
+latch-retry = { version = "0.1.1", path = "../latch-retry", optional = true }
+latch-detect = { version = "0.2.0", path = "../latch-detect", optional = true }
+latch-meter = { version = "0.2.0", path = "../latch-meter", optional = true }
+latch-score = { version = "0.1.0", path = "../latch-score", optional = true }

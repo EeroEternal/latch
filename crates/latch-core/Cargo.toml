@@ -1,7 +1,11 @@
 [package]
 name = "latch-core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Neutral shared types and configuration for the Latch gateway SDK"
+license = "Apache-2.0"
+repository = "https://github.com/EeroEternal/latch"
+homepage = "https://github.com/EeroEternal/latch"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

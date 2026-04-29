@@ -31,21 +31,46 @@ pub struct PromptCachePlan {
     pub tagged_indexes: Vec<usize>,
 }
 
-pub fn plan_prompt_cache(messages: &[Message], provider: PromptCacheProvider) -> PromptCachePlan {
+pub fn plan_prompt_cache(
+    messages: &[Message],
+    provider: PromptCacheProvider,
+    cache_roles: &[String],
+    min_content_chars: usize,
+) -> PromptCachePlan {
     match provider {
-        PromptCacheProvider::Anthropic => PromptCachePlan {
-            provider,
-            tagged_indexes: messages
+        PromptCacheProvider::Anthropic => {
+            let tagged_indexes = messages
                 .iter()
                 .enumerate()
-                .filter_map(|(idx, m)| (m.role == "system").then_some(idx))
-                .collect(),
-        },
+                .filter_map(|(idx, m)| {
+                    if !cache_roles.contains(&m.role) {
+                        return None;
+                    }
+                    if m.content.chars().count() < min_content_chars {
+                        return None;
+                    }
+                    Some(idx)
+                })
+                .collect();
+
+            PromptCachePlan {
+                provider,
+                tagged_indexes,
+            }
+        }
         PromptCacheProvider::OpenAiCompatible | PromptCacheProvider::None => PromptCachePlan {
             provider,
             tagged_indexes: Vec::new(),
         },
     }
+}
+
+/// Backward-compatible convenience function with default parameters.
+pub fn plan_prompt_cache_default(
+    messages: &[Message],
+    provider: PromptCacheProvider,
+) -> PromptCachePlan {
+    plan_prompt_cache(messages, provider, &["system".to_string()], 0)
 }
 
 pub fn apply_prompt_cache_plan(
@@ -65,36 +90,47 @@ pub fn apply_prompt_cache_plan(
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_prompt_cache_plan, plan_prompt_cache};
+    use super::{apply_prompt_cache_plan, plan_prompt_cache, plan_prompt_cache_default};
     use latch_core::{Message, PromptCacheProvider};
 
-    fn msg(role: &str, content: &str) -> Message {
+    fn msg(role: impl Into<String>, content: impl Into<String>) -> Message {
         Message::new(role, content)
     }
 
     #[test]
-    fn anthropic_tags_system_messages() {
+    fn anthropic_tags_system_messages_with_sufficient_length() {
         let messages = vec![
-            msg("system", "policy"),
+            msg("system", "a".repeat(100)), // Long enough
             msg("user", "hello"),
             msg("assistant", "hi"),
-            msg("system", "persona"),
+            msg("system", "short"), // Too short
         ];
-        let plan = plan_prompt_cache(&messages, PromptCacheProvider::Anthropic);
-        assert_eq!(plan.tagged_indexes, vec![0, 3]);
+        let plan = plan_prompt_cache(&messages, PromptCacheProvider::Anthropic, &["system".to_string()], 100);
+        assert_eq!(plan.tagged_indexes, vec![0]);
+    }
+
+    #[test]
+    fn anthropic_tags_multiple_roles() {
+        let messages = vec![
+            msg("system", "a".repeat(100)),
+            msg("user", "b".repeat(100)),
+        ];
+        let cache_roles = vec!["system".to_string(), "user".to_string()];
+        let plan = plan_prompt_cache(&messages, PromptCacheProvider::Anthropic, &cache_roles, 100);
+        assert_eq!(plan.tagged_indexes, vec![0, 1]);
     }
 
     #[test]
     fn openai_compatible_has_no_tags() {
         let messages = vec![msg("system", "policy"), msg("user", "hello")];
-        let plan = plan_prompt_cache(&messages, PromptCacheProvider::OpenAiCompatible);
+        let plan = plan_prompt_cache(&messages, PromptCacheProvider::OpenAiCompatible, &["system".to_string()], 0);
         assert!(plan.tagged_indexes.is_empty());
     }
 
     #[test]
     fn apply_sets_ephemeral_marker_only_for_planned_indexes() {
-        let messages = vec![msg("system", "policy"), msg("user", "hello")];
-        let plan = plan_prompt_cache(&messages, PromptCacheProvider::Anthropic);
+        let messages = vec![msg("system", "a".repeat(100)), msg("user", "hello")];
+        let plan = plan_prompt_cache(&messages, PromptCacheProvider::Anthropic, &["system".to_string()], 100);
         let out = apply_prompt_cache_plan(&messages, &plan);
 
         assert_eq!(
@@ -106,5 +142,16 @@ mod tests {
             "ephemeral"
         );
         assert!(out[1].cache_control.is_none());
+    }
+
+    #[test]
+    fn plan_prompt_cache_default_works() {
+        let messages = vec![
+            msg("system", "a".repeat(100)),
+            msg("user", "hello"),
+        ];
+        let plan = plan_prompt_cache_default(&messages, PromptCacheProvider::Anthropic);
+        assert_eq!(plan.provider, PromptCacheProvider::Anthropic);
+        assert_eq!(plan.tagged_indexes, vec![0]);
     }
 }

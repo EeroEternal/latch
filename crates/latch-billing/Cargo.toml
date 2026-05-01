@@ -1,0 +1,16 @@
+[package]
+name = "latch-billing"
+version = "0.1.0"
+edition = "2021"
+description = "Pure synchronous token billing core library - types, traits, and pricing models"
+
+[dependencies]
+rust_decimal = { version = "1", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = { version = "0.8", optional = true }
+
+[dev-dependencies]
+rust_decimal_macros = "1"
+tempfile = "3"

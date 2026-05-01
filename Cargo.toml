@@ -9,5 +9,6 @@ members = [
     "crates/latch-meter",
     "crates/latch-sdk",
     "crates/latch-score",
+    "crates/latch-billing",
 ]
 resolver = "2"

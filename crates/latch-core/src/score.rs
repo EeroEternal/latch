@@ -3,7 +3,7 @@ use std::time::SystemTime;
 
 // ── Observation types ──
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RequestObservation {
     pub endpoint_id: String,
     pub pool_id: String,
@@ -16,37 +16,39 @@ pub struct RequestObservation {
     pub stream: Option<StreamMetrics>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LatencyBreakdown {
     pub total_ms: u64,
     pub ttft_ms: Option<u64>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct TokenStats {
     pub input: u64,
     pub output: u64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StreamMetrics {
     pub ttft_ms: u64,
-    pub tokens_per_second: f64,
-    pub max_inter_chunk_ms: u64,
-    pub broken: bool,
+    pub tokens_per_second: Option<f64>,
+    pub max_inter_chunk_ms: Option<u64>,
+    pub chunk_count: u64,
+    pub completed_normally: bool,
+    pub stream_broken: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ObservationError {
     Timeout,
-    HttpStatus(u16),
-    ConnectionFailed,
     RateLimited,
-    StreamBroken,
+    Upstream5xx,
+    Upstream4xx,
+    ConnectionFailure,
     EmptyResponse,
-    Truncated,
-    MalformedResponse,
-    Other(String),
+    TruncatedStream,
+    InvalidResponse,
+    Other { code: u16, message: String },
 }
 
 // ── Scoring config ──
@@ -55,17 +57,17 @@ pub enum ObservationError {
 pub struct ScoreConfig {
     pub window_size: usize,
     pub decay_period_secs: u64,
-    pub baseline_score: f32,
-    pub availability_weight: f32,
-    pub latency_weight: f32,
-    pub quality_weight: f32,
-    pub cost_weight: f32,
+    pub baseline_score: f64,
+    pub availability_weight: f64,
+    pub latency_weight: f64,
+    pub quality_weight: f64,
+    pub cost_weight: f64,
     pub good_ttft_ms: u64,
     pub acceptable_ttft_ms: u64,
     pub good_tps: f64,
-    pub max_error_rate: f32,
-    pub max_truncation_rate: f32,
-    pub max_empty_response_rate: f32,
+    pub max_error_rate: f64,
+    pub max_truncation_rate: f64,
+    pub max_empty_response_rate: f64,
 }
 
 impl Default for ScoreConfig {
@@ -94,11 +96,12 @@ impl Default for ScoreConfig {
 pub struct EndpointScore {
     pub endpoint_id: String,
     pub pool_id: String,
-    pub score: f32,
+    pub score: f64,
     pub tier: ScoreTier,
     pub observation_count: usize,
-    pub last_updated: SystemTime,
     pub breakdown: ScoreBreakdown,
+    pub excluded: bool,
+    pub exclusion_reason: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -136,17 +139,33 @@ impl Ord for ScoreTier {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ScoreBreakdown {
-    pub availability: f32,
-    pub latency: f32,
-    pub quality: f32,
-    pub cost: f32,
-    pub penalty: f32,
+    pub availability: f64,
+    pub latency: f64,
+    pub quality: f64,
+    pub cost: f64,
+    pub penalty: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RankingResult {
+pub struct PoolRanking {
+    pub pool_id: String,
     pub ranked_endpoints: Vec<EndpointScore>,
     pub recommended: Option<EndpointScore>,
     pub recommended_fallback: Option<EndpointScore>,
-    pub excluded: Vec<EndpointScore>,
+    pub excluded_endpoints: Vec<EndpointScore>,
+}
+
+/// Injectable clock for testability.
+pub trait Clock: Send + Sync {
+    fn now(&self) -> SystemTime;
+}
+
+/// Default clock that delegates to `SystemTime::now()`.
+#[derive(Default)]
+pub struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now(&self) -> SystemTime {
+        SystemTime::now()
+    }
 }

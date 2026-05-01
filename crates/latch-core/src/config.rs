@@ -92,9 +92,16 @@ pub struct RouterConfig {
     pub confidence_threshold: f32,
     /// Requests with more tokens than this get Premium preference
     pub long_request_tokens: usize,
+    /// Penalty multiplier per failure: 1 failure → 0.8, 2 → 0.64, etc.
+    #[serde(default = "default_penalty_per_failure")]
+    pub penalty_per_failure: f32,
     /// Injectable token estimator (skipped during serialization)
     #[serde(skip, default = "super::default_token_estimator")]
     pub token_estimator: TokenEstimator,
+}
+
+fn default_penalty_per_failure() -> f32 {
+    0.8
 }
 
 impl std::fmt::Debug for RouterConfig {
@@ -137,12 +144,9 @@ pub struct PoolFeedback {
     /// Number of recent failures for each pool
     #[serde(default)]
     pub recent_failures: std::collections::HashMap<String, u32>,
-    /// Endpoint scores from latch-score (endpoint_id -> score)
+    /// Endpoint scores from latch-score (endpoint_id -> score in 0.0..=100.0)
     #[serde(default)]
-    pub endpoint_scores: std::collections::HashMap<String, f32>,
-    /// Penalty multiplier per failure: 1 failure = 0.8, 2 = 0.64, etc.
-    #[serde(default = "default_penalty_per_failure")]
-    pub penalty_per_failure: f32,
+    pub endpoint_scores: std::collections::HashMap<String, f64>,
 }
 
 impl Default for PoolFeedback {
@@ -150,13 +154,8 @@ impl Default for PoolFeedback {
         PoolFeedback {
             recent_failures: std::collections::HashMap::new(),
             endpoint_scores: std::collections::HashMap::new(),
-            penalty_per_failure: default_penalty_per_failure(),
         }
     }
-}
-
-fn default_penalty_per_failure() -> f32 {
-    0.8
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -1,13 +1,13 @@
 [package]
 name = "latch-score"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-description = "Scoring engine for ugate"
+description = "Universal endpoint quality scoring engine"
 license = "Apache-2.0"
 repository = "https://github.com/EeroEternal/latch"
 homepage = "https://github.com/EeroEternal/latch"
 
 [dependencies]
-latch-core = { version = "0.2.0", path = "../latch-core" }
+latch-core = { version = "0.2.1", path = "../latch-core" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

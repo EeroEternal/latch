@@ -21,6 +21,6 @@ pub use routing::RouteTarget;
 pub use session::SessionId;
 pub use token::{default_token_estimator, TokenEstimator};
 pub use score::{
-    EndpointScore, ObservationError, RequestObservation, RankingResult, ScoreBreakdown,
-    ScoreConfig, ScoreTier, StreamMetrics, TokenStats,
+    Clock, EndpointScore, ObservationError, PoolRanking, RequestObservation,
+    ScoreBreakdown, ScoreConfig, ScoreTier, StreamMetrics, SystemClock, TokenStats,
 };

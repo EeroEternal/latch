@@ -26,4 +26,4 @@ latch-router = { version = "0.2.0", path = "../latch-router", optional = true }
 latch-retry = { version = "0.1.1", path = "../latch-retry", optional = true }
 latch-detect = { version = "0.2.0", path = "../latch-detect", optional = true }
 latch-meter = { version = "0.2.0", path = "../latch-meter", optional = true }
-latch-score = { version = "0.1.0", path = "../latch-score", optional = true }
+latch-score = { version = "0.1.1", path = "../latch-score", optional = true }

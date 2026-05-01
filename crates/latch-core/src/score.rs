@@ -65,9 +65,6 @@ pub struct ScoreConfig {
     pub good_ttft_ms: u64,
     pub acceptable_ttft_ms: u64,
     pub good_tps: f64,
-    pub max_error_rate: f64,
-    pub max_truncation_rate: f64,
-    pub max_empty_response_rate: f64,
 }
 
 impl Default for ScoreConfig {
@@ -83,9 +80,6 @@ impl Default for ScoreConfig {
             good_ttft_ms: 500,
             acceptable_ttft_ms: 2000,
             good_tps: 50.0,
-            max_error_rate: 0.20,
-            max_truncation_rate: 0.10,
-            max_empty_response_rate: 0.05,
         }
     }
 }

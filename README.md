@@ -44,7 +44,7 @@ Latch 采用 Cargo workspace 结构，每个 crate 都有明确的职责边界�
 
 | Crate | 版本 | 描述 | 同步/异步 |
 |-------|------|------|-----------|
-| **[latch-core](crates/latch-core/)** | 0.2.0 | 共享类型、配置和枚举定义 | 纯同步 |
+| **[latch-core](crates/latch-core/)** | 0.2.1 | 共享类型、配置和枚举定义 | 纯同步 |
 | **[latch-sdk](crates/latch-sdk/)** | - | Feature-gated 伞形 crate，方便下游引用 | - |
 
 ### 状态管理能力
@@ -58,7 +58,7 @@ Latch 采用 Cargo workspace 结构，每个 crate 都有明确的职责边界�
 | **[latch-detect](crates/latch-detect/)** | 0.2.0 | 后端引擎自动检测（网络探测） | 异步（需网络 I/O） |
 | **[latch-meter](crates/latch-meter/)** | 0.2.0 | 会话级用量计量、配额检查和成本估算 | 纯同步 |
 | **[latch-billing](crates/latch-billing/)** | 0.1.0 | 精确的 token 计费核心（定价、评分、配额） | 纯同步 |
-| **[latch-score](crates/latch-score/)** | 0.1.0 | 端点质量评分引擎（延迟、TTFT、流健康度等） | 纯同步 |
+| **[latch-score](crates/latch-score/)** | 0.1.1 | 端点质量评分引擎（延迟、TTFT、流健康度等） | 纯同步 |
 
 ---
 
@@ -294,9 +294,9 @@ latch-sdk
 ```toml
 # Cargo.toml
 [dependencies]
-latch-core = { version = "0.2.0", git = "https://github.com/EroeEternal/latch" }
+latch-core = { version = "0.2.1", git = "https://github.com/EroeEternal/latch" }
 latch-billing = { version = "0.1.0", git = "https://github.com/EroeEternal/latch" }
-latch-score = { version = "0.1.0", git = "https://github.com/EroeEternal/latch" }
+latch-score = { version = "0.1.1", git = "https://github.com/EroeEternal/latch" }
 # ... 其他需要的 crate
 ```
 
